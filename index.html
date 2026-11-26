@@ -101,7 +101,7 @@
         codeUrl: B + C.buildName + ".wasm" + ext,
         streamingAssetsUrl: "StreamingAssets",
         companyName: C.companyName, productName: C.productName, productVersion: C.productVersion,
-        devicePixelRatio: isMobile ? 1 : undefined,
+        devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), // sharp on phones, capped for performance
         showBanner: (msg, type) => { if (type === "error") showError(msg); else console.warn(msg); }
       }, p => { const v = Math.round(p*100); $("fill").style.width = v+"%"; $("pct").textContent = v+"%"; })
       .then(u => { instance = u; $("overlay").classList.add("hidden"); $("unity-canvas").focus(); })
