@@ -43,7 +43,12 @@
   .card:nth-child(2){border-color:var(--red)}.card:nth-child(3){border-color:var(--black)}
   .card h3{font-size:1.05rem;margin-bottom:4px}.card p{color:var(--muted);font-size:.95rem}
   footer{text-align:center;padding:18px;color:var(--muted);font-size:.9rem}
-  .stage:fullscreen{width:100%;height:100%;border:0;border-radius:0;aspect-ratio:auto;background:#000}
+  .stage:fullscreen,.stage.pseudo-fs{width:100vw;height:100vh;height:100dvh;min-width:0;max-width:none;margin:0;border:0;border-radius:0;aspect-ratio:auto;background:#000;display:flex;align-items:center;justify-content:center;box-shadow:none}
+  .stage.pseudo-fs{position:fixed;inset:0;z-index:1000}
+  .stage:fullscreen #unity-canvas,.stage.pseudo-fs #unity-canvas{width:min(100vw,calc(100dvh * 9 / 16));height:auto;aspect-ratio:9/16;max-height:100dvh}
+  body.no-scroll{overflow:hidden;touch-action:none}
+  .fs-close{display:none;position:absolute;top:calc(10px + env(safe-area-inset-top));right:10px;z-index:5;width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:22px;cursor:pointer}
+  .stage:fullscreen .fs-close,.stage.pseudo-fs .fs-close{display:block}
   .controls{max-width:720px;margin-left:auto;margin-right:auto}.notice{max-width:720px;margin-left:auto;margin-right:auto}
   @media (max-width:640px){.stage{border-radius:10px;border-width:3px}.controls{justify-content:center}}
 </style>
@@ -58,6 +63,7 @@
 <main>
   <div class="stage" id="stage">
     <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <button class="fs-close" id="fs-close" aria-label="Exit fullscreen">✕</button>
     <div class="overlay" id="overlay">
       <h2>Eid Al Itihad</h2><div lang="ar" style="font-weight:700">عيد الاتحاد</div>
       <button class="play" id="play">▶ Play</button>
@@ -110,10 +116,25 @@
     document.body.appendChild(s);
   };
 
-  $("fs").onclick = () => {
-    if (instance) return instance.SetFullscreen(1);
-    const st = $("stage"); (st.requestFullscreen || st.webkitRequestFullscreen || function(){}).call(st);
-  };
+  // Fullscreen: real Fullscreen API where supported (desktop, Android),
+  // otherwise (iPhone Safari) make the game fill the screen with CSS.
+  const st = $("stage");
+  const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+  const isFs = () => !!fsEl() || st.classList.contains("pseudo-fs");
+  function enterFs(){
+    const req = st.requestFullscreen || st.webkitRequestFullscreen;
+    const pseudo = () => { st.classList.add("pseudo-fs"); document.body.classList.add("no-scroll"); window.scrollTo(0,0); };
+    if (req) { try { const r = req.call(st); if (r && r.catch) r.catch(pseudo); } catch(e){ pseudo(); } }
+    else pseudo();
+    $("unity-canvas").focus();
+  }
+  function exitFs(){
+    if (fsEl()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    st.classList.remove("pseudo-fs"); document.body.classList.remove("no-scroll");
+  }
+  $("fs").onclick = () => isFs() ? exitFs() : enterFs();
+  $("fs-close").onclick = exitFs;
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && st.classList.contains("pseudo-fs")) exitFs(); });
 })();
 </script>
 </body>
