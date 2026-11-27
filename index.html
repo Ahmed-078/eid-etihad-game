@@ -65,10 +65,10 @@
 <div class="controls"><button class="imgbtn" id="fs" aria-label="عرض كامل Fullscreen"><img src="img/btn-fullscreen.png" alt="" width="600" height="318"></button></div>
 <div class="notice" id="mobile">Tap Fullscreen for the best view.</div>
 <footer>© <span id="yr"></span> Eid Al Itihad</footer>
-<script src="game.config.js"></script>
+<script>/* always fetch the latest build name, never a cached copy */document.write('<script src="game.config.js?t='+Date.now()+'"><\/script>');</script>
 <script>
 (function(){
-  const C = window.GAME_CONFIG, B = "Build/", ext = C.compression || "";
+  const C = window.GAME_CONFIG, B = "Build/", ext = C.compression || "", V = "?v=" + encodeURIComponent(C.buildName + "-" + (C.productVersion || ""));
   const $ = id => document.getElementById(id);
   $("yr").textContent = new Date().getFullYear();
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
@@ -80,20 +80,26 @@
   $("play").onclick = function(){
     this.style.display="none"; $("bar").style.display="block"; $("pct").style.display="block";
     const s = document.createElement("script");
-    s.src = B + C.buildName + ".loader.js";
+    s.src = B + C.buildName + ".loader.js" + V;
     s.onerror = () => showError("Couldn't find the game files. Check that the Build folder is uploaded and game.config.js has the right build name.");
     s.onload = () => {
       createUnityInstance($("unity-canvas"), {
-        dataUrl: B + C.buildName + ".data" + ext,
-        frameworkUrl: B + C.buildName + ".framework.js" + ext,
-        codeUrl: B + C.buildName + ".wasm" + ext,
+        dataUrl: B + C.buildName + ".data" + ext + V,
+        frameworkUrl: B + C.buildName + ".framework.js" + ext + V,
+        codeUrl: B + C.buildName + ".wasm" + ext + V,
         streamingAssetsUrl: "StreamingAssets",
         companyName: C.companyName, productName: C.productName, productVersion: C.productVersion,
         devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), // sharp on phones, capped for performance
         showBanner: (msg, type) => { if (type === "error") showError(msg); else console.warn(msg); }
       }, p => { const v = Math.round(p*100); $("fill").style.width = v+"%"; $("pct").textContent = v+"%"; })
       .then(u => { instance = u; $("overlay").classList.add("hidden"); $("unity-canvas").focus(); })
-      .catch(m => showError(String(m)));
+      .catch(m => {
+        // A stale cached page asked for old build files: reload once with fresh files.
+        if (/Unknown data format|DOCTYPE/i.test(String(m)) && !/[?&]fresh=/.test(location.search)) {
+          location.replace(location.pathname + "?fresh=" + Date.now()); return;
+        }
+        showError(String(m));
+      });
     };
     document.body.appendChild(s);
   };
@@ -116,6 +122,7 @@
   }
   $("fs").onclick = () => isFs() ? exitFs() : enterFs();
   $("fs-close").onclick = exitFs;
+  if (/[?&]fresh=/.test(location.search)) $("play").click();
   document.addEventListener("keydown", e => { if (e.key === "Escape" && st.classList.contains("pseudo-fs")) exitFs(); });
 })();
 </script>
