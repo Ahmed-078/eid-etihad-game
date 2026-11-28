@@ -15,6 +15,7 @@
   /* Two colours only, sampled from the design image */
   :root{--bg:#F5E8BE;--ink:#AD4901}
   *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overscroll-behavior:none}
   html{background:var(--bg)}
   body{font-family:"Oswald","Noto Naskh Arabic",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding:16px}
   [lang="ar"]{font-family:"Noto Naskh Arabic",serif}
@@ -127,6 +128,15 @@
   cv.addEventListener("touchend", e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
   st.addEventListener("touchmove", e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
   ["gesturestart","gesturechange","dblclick"].forEach(t => st.addEventListener(t, e => e.preventDefault(), { passive: false }));
+  // Stop iPhone Safari's pull-to-refresh from reloading the page mid-game:
+  // while the game is running, block downward drags when the page is already at the top.
+  let ty = 0;
+  document.addEventListener("touchstart", e => { ty = e.touches[0] ? e.touches[0].clientY : 0; }, { passive: true });
+  document.addEventListener("touchmove", e => {
+    if (!instance || !e.cancelable) return;
+    const y = e.touches[0] ? e.touches[0].clientY : 0;
+    if ((window.scrollY || document.documentElement.scrollTop) <= 0 && y > ty) e.preventDefault();
+  }, { passive: false });
   if (/[?&]fresh=/.test(location.search)) $("play").click();
   document.addEventListener("keydown", e => { if (e.key === "Escape" && st.classList.contains("pseudo-fs")) exitFs(); });
 })();
