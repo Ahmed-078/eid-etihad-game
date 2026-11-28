@@ -74,6 +74,15 @@
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
   if (isMobile) $("mobile").style.display = "block";
   let instance = null;
+  // If the last visit was cut off while the game was running (e.g. iPhone ran out of
+  // memory and Safari reloaded the page), start this time in a lighter mode.
+  const LS = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+               set(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+               del(k){ try { localStorage.removeItem(k); } catch(e){} } };
+  const lastRun = +LS.get("eid_running") || 0;
+  const lowMem = LS.get("eid_lowmem") === "1" || (lastRun && Date.now() - lastRun < 30*60*1000);
+  if (lowMem) LS.set("eid_lowmem", "1");
+  window.addEventListener("pagehide", () => LS.del("eid_running"));
 
   function showError(msg){ const e=$("err"); e.style.display="block"; e.textContent=msg; $("bar").style.display="none"; $("pct").style.display="none"; }
 
@@ -89,10 +98,11 @@
         codeUrl: B + C.buildName + ".wasm" + ext + V,
         streamingAssetsUrl: "StreamingAssets",
         companyName: C.companyName, productName: C.productName, productVersion: C.productVersion,
-        devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2), // sharp on phones, capped for performance
+        devicePixelRatio: lowMem ? 1 : Math.min(window.devicePixelRatio || 1, 2), // sharp on phones; 1 in light mode to save memory
+        webglContextAttributes: { preserveDrawingBuffer: false, powerPreference: lowMem ? "low-power" : "default" },
         showBanner: (msg, type) => { if (type === "error") showError(msg); else console.warn(msg); }
       }, p => { const v = Math.round(p*100); $("fill").style.width = v+"%"; $("pct").textContent = v+"%"; })
-      .then(u => { instance = u; $("overlay").classList.add("hidden"); $("unity-canvas").focus(); })
+      .then(u => { instance = u; LS.set("eid_running", String(Date.now())); setInterval(() => LS.set("eid_running", String(Date.now())), 20000); $("overlay").classList.add("hidden"); $("unity-canvas").focus(); })
       .catch(m => {
         // A stale cached page asked for old build files: reload once with fresh files.
         if (/Unknown data format|DOCTYPE/i.test(String(m)) && !/[?&]fresh=/.test(location.search)) {
