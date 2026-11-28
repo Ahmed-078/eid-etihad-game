@@ -43,7 +43,6 @@
   .err{display:none;border:2px solid var(--ink);padding:10px 14px;max-width:90%;font-size:.95rem}
   .controls{margin-top:12px}
   .notice{display:none;margin-top:10px;text-align:center;font-size:.95rem;max-width:420px}
-  footer{margin-top:auto;padding-top:20px;font-size:.85rem;letter-spacing:.05em}
   .stage:fullscreen,.stage.pseudo-fs{width:100vw;height:100vh;height:100dvh;min-width:0;max-width:none;margin:0;border:0;aspect-ratio:auto;display:flex;align-items:center;justify-content:center}
   .stage.pseudo-fs{position:fixed;inset:0;z-index:1000}
   .stage:fullscreen #unity-canvas,.stage.pseudo-fs #unity-canvas{width:min(100vw,calc(100dvh * 9 / 16));height:auto;aspect-ratio:9/16;max-height:100dvh}
@@ -66,13 +65,11 @@
 </div>
 <div class="controls"><button class="imgbtn" id="fs" aria-label="عرض كامل Fullscreen"><img src="img/btn-fullscreen.png" alt="" width="600" height="318"></button></div>
 <div class="notice" id="mobile">Tap Fullscreen for the best view.</div>
-<footer>© <span id="yr"></span> Eid Al Itihad</footer>
 <script>/* always fetch the latest build name, never a cached copy */document.write('<script src="game.config.js?t='+Date.now()+'"><\/script>');</script>
 <script>
 (function(){
   const C = window.GAME_CONFIG, B = "Build/", ext = C.compression || "", V = "?v=" + encodeURIComponent(C.buildName + "-" + (C.productVersion || ""));
   const $ = id => document.getElementById(id);
-  $("yr").textContent = new Date().getFullYear();
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform));
   if (isMobile) $("mobile").style.display = "block";
   let instance = null;
